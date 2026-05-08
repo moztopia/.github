@@ -21,7 +21,7 @@ Our vision is to transcend traditional development patterns by building systems 
 | Repository | Focus Area | Description |
 | :--- | :--- | :--- |
 | **[`artificial-intelligence`](https://github.com/moztopia/artificial-intelligence)** | `AI & ML` | Modular framework for AI-driven code generation and autonomous agents. |
-| **[`github_scaffolding`](https://github.com/moztopia/github_scaffolding)** | `DevOps` | Declarative repository management and advanced orchestration engine. |
+| **[`github-scaffolding`](https://github.com/moztopia/github-scaffolding)** | `DevOps` | Declarative repository management and advanced orchestration engine. |
 | **[`github-action-runner`](https://github.com/moztopia/github-action-runner)** | `Infrastructure` | High-performance, specialized runners for secure CI/CD environments. |
 | **[`github_integration`](https://github.com/moztopia/github_integration)** | `Core Services` | Seamless services for cross-repository synchronization and logic. |
 

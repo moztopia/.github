@@ -86,7 +86,7 @@ Options:
   -q, --quiet           Suppress all informational output (errors will still print)
   --docs                Display README.md using pydoc pager
   --force               Delete existing rulesets before creating new ones
-  --update-repo         Replace current .github/ with scaffolding from github_scaffolding
+  --update-repo         Replace current .github/ with scaffolding from github-scaffolding
 ```
 
 If you encounter duplicate ruleset names, you can use the `--force` flag to automatically seek and destroy matching existing configurations prior to creating the new ones.
