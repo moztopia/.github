@@ -1,16 +1,12 @@
-<div align="center">
-  <img src="banner.png" width="100%" alt="Moztopia Banner">
-  <br>
-  <br>
-  <h1>🌌 Moztopia</h1>
-  <p><b>Building Intelligent Software Solutions for a New Era</b></p>
-  
-  <p>
-    <a href="https://github.com/moztopia"><img src="https://img.shields.io/badge/Artificial_Intelligence-Premium-7B61FF?style=for-the-badge&logo=openai&logoColor=white" alt="AI"></a>
-    <a href="https://github.com/moztopia"><img src="https://img.shields.io/badge/Automation-Elite-FFD700?style=for-the-badge&logo=githubactions&logoColor=white" alt="Automation"></a>
-    <a href="https://github.com/moztopia"><img src="https://img.shields.io/badge/Security-Fortified-00FFA3?style=for-the-badge&logo=github&logoColor=white" alt="Security"></a>
-  </p>
-</div>
+# 🌌 Moztopia
+
+![Moztopia Banner](banner.png)
+
+**Building Intelligent Software Solutions for a New Era**
+
+[![AI](https://img.shields.io/badge/Artificial_Intelligence-Premium-7B61FF?style=for-the-badge&logo=openai&logoColor=white)](https://github.com/moztopia)
+[![Automation](https://img.shields.io/badge/Automation-Elite-FFD700?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/moztopia)
+[![Security](https://img.shields.io/badge/Security-Fortified-00FFA3?style=for-the-badge&logo=github&logoColor=white)](https://github.com/moztopia)
 
 ---
 
@@ -24,10 +20,10 @@ Our vision is to transcend traditional development patterns by building systems 
 
 | Repository | Focus Area | Description |
 | :--- | :--- | :--- |
-| **[`artificial-intelligence`](#)** | `AI & ML` | Modular framework for AI-driven code generation and autonomous agents. |
-| **[`github_scaffolding`](#)** | `DevOps` | Declarative repository management and advanced orchestration engine. |
-| **[`github-action-runner`](#)** | `Infrastructure` | High-performance, specialized runners for secure CI/CD environments. |
-| **[`github_integration`](#)** | `Core Services` | Seamless services for cross-repository synchronization and logic. |
+| **[`artificial-intelligence`](https://github.com/moztopia/artificial-intelligence)** | `AI & ML` | Modular framework for AI-driven code generation and autonomous agents. |
+| **[`github_scaffolding`](https://github.com/moztopia/github_scaffolding)** | `DevOps` | Declarative repository management and advanced orchestration engine. |
+| **[`github-action-runner`](https://github.com/moztopia/github-action-runner)** | `Infrastructure` | High-performance, specialized runners for secure CI/CD environments. |
+| **[`github_integration`](https://github.com/moztopia/github_integration)** | `Core Services` | Seamless services for cross-repository synchronization and logic. |
 
 ---
 
@@ -59,7 +55,6 @@ Explore our standards to ensure full alignment with the Moztopia technical visio
 
 ---
 
-<div align="center">
-  <p><i>Moztopia — The Future of Intelligent Software Engineering</i></p>
-  <img src="https://img.shields.io/badge/Made_with_✨-Antigravity-blue?style=flat-square" alt="Antigravity">
-</div>
+*Moztopia — The Future of Intelligent Software Engineering*
+
+![Antigravity](https://img.shields.io/badge/Made_with_✨-Antigravity-blue?style=flat-square)
