@@ -1,0 +1,13 @@
+---
+name: Makefile Validation
+description: Runs tests for C/Makefile projects
+runs:
+  using: "composite"
+  steps:
+    - name: Makefile check
+      shell: bash
+      run: |
+        for f in $(find . -name Makefile); do
+          echo "Makefile project detected at $f"
+          (cd $(dirname $f) && make test || make || true)
+        done

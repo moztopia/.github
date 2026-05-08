@@ -1,0 +1,42 @@
+---
+name: Setup Environment
+description: "Loads automated integration config, configures git identity, and switches to the target branch."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Load Configuration
+      id: config
+      shell: bash
+      run: |
+        CONFIG_FILE=".github/configuration.json"
+        if [ -f "$CONFIG_FILE" ]; then
+          TARGET_BRANCH=$(jq -r '.integration.target_branch' "$CONFIG_FILE")
+          PREFIXES=$(jq -r '.integration.branch_prefixes[]' "$CONFIG_FILE" | paste -sd '|' -)
+          ALLOW_MANUAL=$(jq -r '.integration.allow_manual_run // true' "$CONFIG_FILE")
+
+          # Enforce manual run restriction
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "$ALLOW_MANUAL" != "true" ]; then
+            echo "::error::Manual runs (workflow_dispatch) are disabled in $CONFIG_FILE"
+            exit 1
+          fi
+
+          echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
+          echo "PREFIXES=$PREFIXES" >> $GITHUB_ENV
+          echo "target_branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
+        else
+          echo "::error::$CONFIG_FILE not found."
+          exit 1
+        fi
+
+    - name: Configure Git
+      shell: bash
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Fetch and Switch to Target Branch
+      shell: bash
+      run: |
+        git fetch --all
+        git checkout "$TARGET_BRANCH"

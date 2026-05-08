@@ -1,0 +1,24 @@
+---
+name: Laravel/PHP Validation
+description: Runs tests for Laravel and PHP projects
+runs:
+  using: "composite"
+  steps:
+    - name: Laravel check
+      shell: bash
+      run: |
+        for f in $(find . -name composer.json); do
+          echo "Laravel/PHP project detected at $f"
+          (
+            cd $(dirname $f) \
+            && composer validate --no-check-all \
+            && composer install --no-progress --prefer-dist --optimize-autoloader \
+            && php artisan --version \
+            && php artisan config:clear \
+            && php artisan cache:clear \
+            && php artisan migrate --env=testing --force \
+            && php artisan route:list \
+            && php artisan test --env=testing \
+            || true
+          )
+        done

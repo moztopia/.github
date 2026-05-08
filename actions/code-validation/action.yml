@@ -1,0 +1,86 @@
+name: "Code Validation"
+description: "Run all language and toolchain validation checks"
+
+inputs:
+  check_node:
+    description: "Enable Node.js validation"
+    default: "false"
+  check_python:
+    description: "Enable Python validation"
+    default: "false"
+  check_laravel:
+    description: "Enable Laravel/PHP validation"
+    default: "false"
+  check_rust:
+    description: "Enable Rust validation"
+    default: "false"
+  check_dart:
+    description: "Enable Dart/Flutter validation"
+    default: "false"
+  check_makefile:
+    description: "Enable Makefile validation"
+    default: "false"
+  check_bash:
+    description: "Enable Bash validation"
+    default: "false"
+  check_markdown:
+    description: "Enable Markdown validation"
+    default: "false"
+  check_config:
+    description: "Enable Config validation"
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js 24
+      if: ${{ inputs.check_node == 'true' }}
+      uses: actions/setup-node@v6
+      with:
+        node-version: 24
+
+    - name: Node.js Validation
+      if: ${{ inputs.check_node == 'true' }}
+      uses: ./.github/actions/node-check
+
+    - name: Python Validation
+      if: ${{ inputs.check_python == 'true' }}
+      uses: ./.github/actions/python-check
+
+    - name: Setup PHP
+      if: ${{ inputs.check_laravel == 'true' }}
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+
+    - name: Laravel/PHP Validation
+      if: ${{ inputs.check_laravel == 'true' }}
+      uses: ./.github/actions/laravel-check
+
+    - name: Rust Validation
+      if: ${{ inputs.check_rust == 'true' }}
+      uses: ./.github/actions/rust-check
+
+    - name: Setup Dart
+      if: ${{ inputs.check_dart == 'true' }}
+      uses: dart-lang/setup-dart@v1
+
+    - name: Dart/Flutter Validation
+      if: ${{ inputs.check_dart == 'true' }}
+      uses: ./.github/actions/dart-check
+
+    - name: Makefile Validation
+      if: ${{ inputs.check_makefile == 'true' }}
+      uses: ./.github/actions/makefile-check
+
+    - name: Bash Validation
+      if: ${{ inputs.check_bash == 'true' }}
+      uses: ./.github/actions/bash-check
+
+    - name: Markdown Validation
+      if: ${{ inputs.check_markdown == 'true' }}
+      uses: ./.github/actions/markdown-check
+
+    - name: Config Validation
+      if: ${{ inputs.check_config == 'true' }}
+      uses: ./.github/actions/config-check

@@ -1,0 +1,177 @@
+description: "Configuration for the Automated Integration workflow"
+
+integration:
+  enabled: true
+  target_branch: "develop"
+  branch_prefixes:
+    - "feat/"
+    - "chore/"
+    - "bug/"
+    - "docs/"
+    - "test/"
+    - "ai/"
+    - "ci/"
+    - "refactor/"
+  output_branch_prefix: "nightly"
+  output_branch_append_date: true
+  allow_manual_run: true
+  pull_request:
+    enabled: true
+    to_branch: "develop"
+    title: "Nightly Update"
+    body: "Automated PR to update develop from nightly snapshot"
+
+code_checks:
+  node:
+    enabled: true
+  python:
+    enabled: true
+  laravel:
+    enabled: true
+  rust:
+    enabled: true
+  dart:
+    enabled: true
+  makefile:
+    enabled: true
+  bash:
+    enabled: true
+  markdown:
+    enabled: true
+  config:
+    enabled: true
+
+# The setup section is a generic GitHub API executor.
+# Each entry must define: endpoint, method, and payload.
+
+setup:
+  rulesets_branch_prefix_enforcement:
+    endpoint: "repos/{owner}/{repo}/rulesets"
+    method: "POST"
+    payload:
+      {
+        "name": "Branch Prefix Enforcement",
+        "target": "branch",
+        "enforcement": "active",
+        "bypass_actors":
+          [
+            {
+              "actor_id": 5,
+              "actor_type": "RepositoryRole",
+              "bypass_mode": "always",
+            },
+          ],
+        "conditions":
+          {
+            "ref_name":
+              {
+                "include": ["~ALL"],
+                "exclude":
+                  [
+                    "refs/heads/feat/*",
+                    "refs/heads/bug/*",
+                    "refs/heads/chore/*",
+                    "refs/heads/docs/*",
+                    "refs/heads/test/*",
+                    "refs/heads/ai/*",
+                    "refs/heads/refactor/*",
+                    "refs/heads/ci/*",
+                    "refs/heads/build/*",
+                    "refs/heads/dependabot/*",
+                  ],
+              },
+          },
+        "rules": [{ "type": "creation" }],
+      }
+
+  ruleset_branch_prevent_deletion:
+    endpoint: "repos/{owner}/{repo}/rulesets"
+    method: "POST"
+    payload:
+      {
+        "name": "Prevent Branch Deletion",
+        "target": "branch",
+        "enforcement": "active",
+        "bypass_actors":
+          [
+            {
+              "actor_id": 5,
+              "actor_type": "RepositoryRole",
+              "bypass_mode": "always",
+            },
+          ],
+        "conditions":
+          {
+            "ref_name":
+              {
+                "include": ["~ALL"],
+                "exclude": ["refs/heads/nightly/*", "refs/heads/nightly"],
+              },
+          },
+        "rules": [{ "type": "deletion" }],
+      }
+
+  repository_setting_disable_wiki:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "has_wiki": false }
+
+  repository_setting_disable_projects:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "has_projects": false }
+
+  repository_setting_disable_discussions:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "has_discussions": false }
+
+  repository_setting_disable_sponsors:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "has_sponsors": false }
+
+  repository_setting_merge_commits:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "allow_merge_commit": true }
+
+  repository_setting_squash_merges:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "allow_squash_merge": true }
+
+  repository_setting_rebase_merges:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "allow_rebase_merge": true }
+
+  repository_setting_require_branch_update:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "allow_update_branch": true }
+
+  repository_setting_disable_auto_merge:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "allow_auto_merge": false }
+
+  repository_setting_keep_head_branch:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "delete_branch_on_merge": false }
+
+  repository_setting_allow_commit_comments:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "allow_commit_comments": true }
+
+  repository_setting_limit_pushes:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "limit_pushes": true }
+
+  repository_setting_auto_close_issues:
+    endpoint: "repos/{owner}/{repo}"
+    method: "PATCH"
+    payload: { "auto_close_issues": true }

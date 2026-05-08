@@ -1,0 +1,11 @@
+---
+name: Config Validation
+description: Lints YAML and JSON configuration files
+runs:
+  using: "composite"
+  steps:
+    - name: Config check
+      shell: bash
+      run: |
+        yamllint -d "{extends: default, rules: {line-length: disable, truthy: disable}}" .github/workflows || exit 1
+        jq empty .github/configuration.json || exit 1

@@ -1,0 +1,179 @@
+#!/usr/bin/env python3
+
+import argparse
+import subprocess
+import sys
+import os
+import json
+import shutil
+import glob
+import tempfile
+import yaml
+import pydoc  # Added for page-by-page output
+
+# Color codes for terminal output
+GREEN = '\033[0;32m'
+BLUE = '\033[0;34m'
+YELLOW = '\033[0;33m'
+RED = '\033[0;31m'
+NC = '\033[0m' # No Color
+
+def log_info(msg, quiet=False):
+    if not quiet:
+        print(f"{BLUE}ℹ {msg}{NC}")
+
+def log_warn(msg, quiet=False):
+    if not quiet:
+        print(f"{YELLOW}⚠ {msg}{NC}")
+
+def log_success(msg, quiet=False):
+    if not quiet:
+        print(f"{GREEN}✔ {msg}{NC}")
+
+def log_error(msg):
+    print(f"{RED}✖ {msg}{NC}", file=sys.stderr)
+
+def execute_gh_api(file_path, endpoint, method, force_mode, stop_on_fail, quiet, fallback_name=None):
+    """Executes the GitHub API call for a single JSON file."""
+    
+    # Extract name from JSON
+    try:
+        with open(file_path, 'r') as f:
+            payload_data = json.load(f)
+            payload_name = payload_data.get('name', fallback_name or os.path.basename(file_path))
+    except Exception as e:
+        log_error(f"Failed to read/parse JSON in {file_path}: {e}")
+        if stop_on_fail: sys.exit(1)
+        return False
+
+    # Force Mode (Deletion)
+    if force_mode and 'rulesets' in endpoint:
+        log_info(f"Force mode: Checking for existing ruleset named '{payload_name}'...", quiet)
+        get_res = subprocess.run(['gh', 'api', endpoint], capture_output=True, text=True)
+        
+        if get_res.returncode == 0:
+            try:
+                rulesets = json.loads(get_res.stdout)
+                target_id = next((rs.get('id') for rs in rulesets if rs.get('name') == payload_name), None)
+                
+                if target_id:
+                    log_warn(f"Deleting existing ruleset (ID: {target_id})...", quiet)
+                    del_res = subprocess.run(['gh', 'api', f"{endpoint}/{target_id}", '--method', 'DELETE'], capture_output=True, text=True)
+                    if del_res.returncode != 0:
+                        log_error(f"Failed to delete existing ruleset: {del_res.stderr}")
+                        if stop_on_fail: sys.exit(1)
+                        return False
+            except json.JSONDecodeError:
+                log_error("Failed to parse response when checking for duplicates.")
+                if stop_on_fail: sys.exit(1)
+                return False
+
+    # Execution (Creation/Update)
+    action_verb = "Applying" if method in ["PATCH", "PUT"] else "Creating"
+    log_info(f"{action_verb}: {payload_name}...", quiet)
+
+    cmd = ['gh', 'api', endpoint, '--method', method, '--input', file_path]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode == 0:
+        log_success(f"Successfully applied: {payload_name}\n", quiet)
+        return True
+    else:
+        log_error(f"Failed to apply: {payload_name}")
+        output = result.stdout + result.stderr
+        
+        if "Name must be unique" in output:
+            log_error("A ruleset with this name already exists. Use --force to auto-overwrite.")
+        else:
+            print(output.strip())
+            
+        if stop_on_fail:
+            sys.exit(1)
+        print("") # Add newline for spacing before next step
+        return False
+
+def main():
+    parser = argparse.ArgumentParser(description="A declarative GitHub repository configuration tool.")
+    parser.add_argument('-q', '--quiet', action='store_true', help="Suppress all informational output")
+    parser.add_argument('--docs', action='store_true', help="Display README.md using pydoc pager")
+    parser.add_argument('--force', action='store_true', help="Delete existing rulesets before creating new ones")
+    args = parser.parse_args()
+
+    # Handle --docs early
+    if args.docs:
+        readme_path = './README.md'
+        if os.path.isfile(readme_path):
+            try:
+                with open(readme_path, 'r') as f:
+                    readme_content = f.read()
+                pydoc.pager(readme_content)
+            except Exception as e:
+                log_error(f"Failed to read README.md: {e}")
+        else:
+            log_warn("No README.md found in the current directory to display.")
+        sys.exit(0)
+
+    # Pre-flight check
+    if not shutil.which('gh'):
+        log_error("GitHub CLI (gh) is not installed. Please install it first.")
+        sys.exit(1)
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)
+    config_yaml_path = os.path.join(project_root, 'github_configuration.yaml')
+
+    # Load configuration.yaml or Fallback to README
+    if not os.path.isfile(config_yaml_path):
+        log_error(f"Configuration file not found in the root of the project: {config_yaml_path}")
+        log_info("Please read the README.md file in the .github/ folder.")
+        log_info("A template is provided at .github/github_configuration.example.yaml.")
+        log_info("Please copy this to the root of your project as github_configuration.yaml and modify it to fit your needs.\n")
+        
+        readme_path = os.path.join(script_dir, 'README.md')
+        if os.path.isfile(readme_path):
+            try:
+                with open(readme_path, 'r') as f:
+                    readme_content = f.read()
+                pydoc.pager(readme_content)
+            except Exception as e:
+                log_error(f"Failed to read README.md: {e}")
+        else:
+            log_warn("No README.md found to display.")
+            
+        sys.exit(1)
+
+    try:
+        with open(config_yaml_path, 'r') as f:
+            config_data = yaml.safe_load(f)
+            setup_config = config_data.get('setup', {})
+    except Exception as e:
+        log_error(f"Failed to parse {config_yaml_path}: {e}")
+        sys.exit(1)
+
+    if not setup_config:
+        log_warn("No 'setup' section found in github_configuration.yaml.", args.quiet)
+        sys.exit(0)
+
+    for key, entry in setup_config.items():
+        if not isinstance(entry, dict):
+            log_error(f"Invalid configuration for key '{key}': expected a mapping with endpoint, method, and payload.")
+            sys.exit(1)
+
+        endpoint = entry.get('endpoint')
+        method = entry.get('method')
+        payload = entry.get('payload')
+
+        if not endpoint or not method or payload is None:
+            log_error(f"Configuration key '{key}' is missing required fields (endpoint, method, payload).")
+            sys.exit(1)
+
+        fd, temp_path = tempfile.mkstemp(suffix='.json')
+        try:
+            with os.fdopen(fd, 'w') as temp_f:
+                json.dump(payload, temp_f)
+            execute_gh_api(temp_path, endpoint, method, args.force, True, args.quiet, fallback_name=key)
+        finally:
+            os.remove(temp_path)
+
+if __name__ == "__main__":
+    main()

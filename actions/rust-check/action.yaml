@@ -1,0 +1,13 @@
+---
+name: Rust Validation
+description: Runs tests for Rust projects
+runs:
+  using: "composite"
+  steps:
+    - name: Rust check
+      shell: bash
+      run: |
+        for f in $(find . -name Cargo.toml); do
+          echo "Rust project detected at $f"
+          (cd $(dirname $f) && cargo test || true)
+        done

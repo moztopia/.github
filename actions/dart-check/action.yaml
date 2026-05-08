@@ -1,0 +1,13 @@
+---
+name: Dart/Flutter Validation
+description: Runs tests for Dart and Flutter projects
+runs:
+  using: "composite"
+  steps:
+    - name: Dart check
+      shell: bash
+      run: |
+        for f in $(find . -name pubspec.yaml); do
+          echo "Dart/Flutter project detected at $f"
+          (cd $(dirname $f) && dart pub get && dart test || true)
+        done

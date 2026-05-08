@@ -1,0 +1,13 @@
+---
+name: Bash Validation
+description: Lints Bash scripts
+runs:
+  using: "composite"
+  steps:
+    - name: Bash check
+      shell: bash
+      run: |
+        for f in $(find . -name "*.sh"); do
+          echo "Linting bash script $f"
+          bash -n $f || exit 1
+        done

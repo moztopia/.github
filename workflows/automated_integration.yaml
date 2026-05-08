@@ -1,0 +1,71 @@
+---
+name: Automated Integration
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  check-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: check
+        shell: bash
+        run: |
+          if [ -f .github/configuration.json ]; then
+            ENABLED=$(jq -r '.integration.enabled | if . == null then true else . end' .github/configuration.json)
+            echo "enabled=$ENABLED" >> $GITHUB_OUTPUT
+          else
+            echo "enabled=true" >> $GITHUB_OUTPUT
+          fi
+
+  integration:
+    needs: check-gate
+    if: needs.check-gate.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-environment
+
+      - name: Sequential merge
+        uses: ./.github/actions/git-merge-prefixes
+
+      - name: Load Code Check Config
+        shell: bash
+        run: |
+          CONFIG_FILE=".github/configuration.json"
+          jq -r '.code_checks | to_entries | .[] | "CHECK_\(.key | ascii_upcase)=\(.value.enabled | if . == null then true else . end)"' "$CONFIG_FILE" >> $GITHUB_ENV
+
+      - name: Code Validation
+        uses: ./.github/actions/code-validation
+        with:
+          check_node: ${{ env.CHECK_NODE }}
+          check_python: ${{ env.CHECK_PYTHON }}
+          check_laravel: ${{ env.CHECK_LARAVEL }}
+          check_rust: ${{ env.CHECK_RUST }}
+          check_dart: ${{ env.CHECK_DART }}
+          check_makefile: ${{ env.CHECK_MAKEFILE }}
+          check_bash: ${{ env.CHECK_BASH }}
+          check_markdown: ${{ env.CHECK_MARKDOWN }}
+          check_config: ${{ env.CHECK_CONFIG }}
+
+      - name: Push integration branch
+        shell: bash
+        run: |
+          git push origin --delete "$MERGED_BRANCH" || true
+          git push origin "$MERGED_BRANCH"
+
+      - name: Create Pull Request
+        uses: ./.github/actions/create-pull-request
+        env:
+          GH_TOKEN: ${{ github.token }}
