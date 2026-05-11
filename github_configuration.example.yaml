@@ -1,177 +1,129 @@
+# Configuration for the Automated Integration workflow
 description: "Configuration for the Automated Integration workflow"
 
 integration:
-  enabled: true
-  target_branch: "develop"
-  branch_prefixes:
+  enabled: true # Master switch: enable/disable integration workflow
+  target_branch: "develop" # Branch where validated changes are ultimately merged
+  branch_prefixes: # Feature branch prefixes eligible for integration
     - "feat/"
     - "chore/"
     - "bug/"
     - "docs/"
     - "test/"
-    - "ai/"
-    - "ci/"
-    - "refactor/"
-  output_branch_prefix: "nightly"
-  output_branch_append_date: true
-  allow_manual_run: true
+  output_branch_prefix: "nightly" # Prefix for generated integration branches
+  output_branch_append_date: true # Append date to nightly branch name (e.g. nightly-20260511)
+  allow_manual_run: true # Allow workflow_dispatch (manual trigger)
   pull_request:
-    enabled: true
-    to_branch: "develop"
-    title: "Nightly Update"
-    body: "Automated PR to update develop from nightly snapshot"
+    enabled: true # Automatically open a PR after integration
+    to_branch: "develop" # Target branch for the PR
+    title: "Nightly Update" # Title of the generated PR
+    body: "Automated PR to update develop from nightly snapshot" # Body text of the PR
+
+versioning:
+  files: # Explicit list of version files to bump
+    - apps/frontend/package.json # Node.js project version
+    - services/api/pyproject.toml # Python project version
+    - services/web/composer.json # Laravel/PHP project version
+    - libs/core/Cargo.toml # Rust project version
+    - apps/mobile/pubspec.yaml # Dart project version
+    - tools/build/VERSION # Makefile project version (plain text file)
+    - scripts/VERSION # Bash project version (plain text file)
+    - docs/version.md # Documentation version (Markdown file)
+    - config/version.yaml # Config project version (YAML file)
 
 code_checks:
   node:
-    enabled: true
+    enabled: true # Run Node.js checks (lint/tests)
   python:
-    enabled: true
+    enabled: true # Run Python checks (lint/tests)
   laravel:
-    enabled: true
+    enabled: true # Run Laravel/PHP checks
   rust:
-    enabled: true
+    enabled: true # Run Rust checks (cargo check/test)
   dart:
-    enabled: true
+    enabled: true # Run Dart checks (analyzer/tests)
   makefile:
-    enabled: true
+    enabled: true # Validate Makefile syntax
   bash:
-    enabled: true
+    enabled: true # Validate Bash scripts (shellcheck)
   markdown:
-    enabled: true
+    enabled: true # Validate Markdown files (lint)
   config:
-    enabled: true
-
-# The setup section is a generic GitHub API executor.
-# Each entry must define: endpoint, method, and payload.
+    enabled: true # Validate configuration files (YAML/JSON)
 
 setup:
+  # Rulesets and repository settings applied via GitHub API calls
   rulesets_branch_prefix_enforcement:
     endpoint: "repos/{owner}/{repo}/rulesets"
     method: "POST"
-    payload:
-      {
-        "name": "Branch Prefix Enforcement",
-        "target": "branch",
-        "enforcement": "active",
-        "bypass_actors":
-          [
-            {
-              "actor_id": 5,
-              "actor_type": "RepositoryRole",
-              "bypass_mode": "always",
-            },
-          ],
-        "conditions":
-          {
-            "ref_name":
-              {
-                "include": ["~ALL"],
-                "exclude":
-                  [
-                    "refs/heads/feat/*",
-                    "refs/heads/bug/*",
-                    "refs/heads/chore/*",
-                    "refs/heads/docs/*",
-                    "refs/heads/test/*",
-                    "refs/heads/ai/*",
-                    "refs/heads/refactor/*",
-                    "refs/heads/ci/*",
-                    "refs/heads/build/*",
-                    "refs/heads/dependabot/*",
-                  ],
-              },
-          },
-        "rules": [{ "type": "creation" }],
-      }
+    payload: { ... } # Enforces branch naming conventions
 
   ruleset_branch_prevent_deletion:
     endpoint: "repos/{owner}/{repo}/rulesets"
     method: "POST"
-    payload:
-      {
-        "name": "Prevent Branch Deletion",
-        "target": "branch",
-        "enforcement": "active",
-        "bypass_actors":
-          [
-            {
-              "actor_id": 5,
-              "actor_type": "RepositoryRole",
-              "bypass_mode": "always",
-            },
-          ],
-        "conditions":
-          {
-            "ref_name":
-              {
-                "include": ["~ALL"],
-                "exclude": ["refs/heads/nightly/*", "refs/heads/nightly"],
-              },
-          },
-        "rules": [{ "type": "deletion" }],
-      }
+    payload: { ... } # Prevents deletion of protected branches
 
   repository_setting_disable_wiki:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "has_wiki": false }
+    payload: { "has_wiki": false } # Disable GitHub Wiki
 
   repository_setting_disable_projects:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "has_projects": false }
+    payload: { "has_projects": false } # Disable GitHub Projects
 
   repository_setting_disable_discussions:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "has_discussions": false }
+    payload: { "has_discussions": false } # Disable GitHub Discussions
 
   repository_setting_disable_sponsors:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "has_sponsors": false }
+    payload: { "has_sponsors": false } # Disable GitHub Sponsors
 
   repository_setting_merge_commits:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "allow_merge_commit": true }
+    payload: { "allow_merge_commit": true } # Allow merge commits
 
   repository_setting_squash_merges:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "allow_squash_merge": true }
+    payload: { "allow_squash_merge": true } # Allow squash merges
 
   repository_setting_rebase_merges:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "allow_rebase_merge": true }
+    payload: { "allow_rebase_merge": true } # Allow rebase merges
 
   repository_setting_require_branch_update:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "allow_update_branch": true }
+    payload: { "allow_update_branch": true } # Require branch update before merge
 
   repository_setting_disable_auto_merge:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "allow_auto_merge": false }
+    payload: { "allow_auto_merge": false } # Disable auto‑merge
 
   repository_setting_keep_head_branch:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "delete_branch_on_merge": false }
+    payload: { "delete_branch_on_merge": false } # Keep branch after merge
 
   repository_setting_allow_commit_comments:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "allow_commit_comments": true }
+    payload: { "allow_commit_comments": true } # Allow commit comments
 
   repository_setting_limit_pushes:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "limit_pushes": true }
+    payload: { "limit_pushes": true } # Restrict push permissions
 
   repository_setting_auto_close_issues:
     endpoint: "repos/{owner}/{repo}"
     method: "PATCH"
-    payload: { "auto_close_issues": true }
+    payload: { "auto_close_issues": true } # Auto‑close issues when PR merges
