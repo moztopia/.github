@@ -1,0 +1,147 @@
+name: Integration Robot
+
+on:
+  push:
+    branches:
+      - "feat/**"
+      - "chore/**"
+      - "docs/**"
+      - "bug/**"
+      - "test/**"
+      - "ai/**"
+      - "refactor/**"
+  schedule:
+    - cron: "0 0 * * *" # Every night at midnight UTC
+  workflow_dispatch:
+
+env:
+  VERSION: 1
+  RELEASE: 0
+  PATCH: 0
+  RELEASE_NAME: "ask-mittens"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  validate:
+    name: Validate Push
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-environment
+
+      - name: Code Validation
+        uses: ./.github/actions/code-validation
+        with:
+          check_node: "true"
+          check_bash: "true"
+          check_markdown: "true"
+
+  nightly-integration:
+    name: Nightly Integration
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Base
+        uses: actions/checkout@v6
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "integration-robot[bot]"
+          git config --global user.email "integration-robot[bot]@users.noreply.github.com"
+
+      - name: Build Nightly
+        id: nightly
+        run: |
+          # 1. Generate Branch Name
+          # Format: nightly/{version}.{release}.{patch}-{build_date_time}-{release_name}
+          DATE=$(date +'%Y%m%d-%H%M')
+          BRANCH_NAME="nightly/${{ env.VERSION }}.${{ env.RELEASE }}.${{ env.PATCH }}-${DATE}-${{ env.RELEASE_NAME }}"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          
+          echo "Creating nightly integration branch: $BRANCH_NAME"
+          git checkout -b "$BRANCH_NAME" develop
+          
+          # 2. Identify Candidate Branches
+          # Prefixes: feat/, chore/, docs/, bug/, test/, ai/, refactor/
+          PREFIX_REGEX="origin/(feat/|chore/|docs/|bug/|test/|ai/|refactor/)"
+          git fetch --all --prune
+          
+          # Get list of unique remote branch names matching prefixes
+          branches=$(git branch -r | grep -E "$PREFIX_REGEX" | sed 's|origin/||' | sort -u)
+          
+          if [ -z "$branches" ]; then
+            echo "No candidate branches found for integration."
+            exit 0
+          fi
+          
+          echo "Found candidate branches:"
+          echo "$branches"
+          
+          # 3. Sequential Integration (Not All or Nothing)
+          INTEGRATED_COUNT=0
+          FAILED_COUNT=0
+          
+          for branch in $branches; do
+            echo "::group::Processing branch: $branch"
+            
+            # Ensure we are on our new nightly branch
+            git checkout "$BRANCH_NAME"
+            
+            # Attempt to merge
+            if git merge --no-commit --no-ff "origin/$branch"; then
+              echo "Merge successful. Running validation suite..."
+              
+              # Run validation. If it fails, we exclude the branch.
+              # For this implementation, we run the project's standard test suite.
+              # In a composite action environment, we'd ideally invoke the validation logic here.
+              VALID=true
+              if [ -f "package.json" ]; then
+                npm install && npm test || VALID=false
+              elif [ -f "Makefile" ]; then
+                make test || VALID=false
+              fi
+              
+              if [ "$VALID" = "true" ]; then
+                git commit -m "Robot: Integrated $branch"
+                echo "Successfully integrated $branch"
+                INTEGRATED_COUNT=$((INTEGRATED_COUNT + 1))
+              else
+                echo "Validation failed for $branch. Excluding from nightly."
+                git merge --abort || git reset --hard HEAD
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+              fi
+            else
+              echo "Merge conflict detected for $branch. Skipping."
+              git merge --abort
+              FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            echo "::endgroup::"
+          done
+          
+          # 4. Finalize and Push
+          if [ $INTEGRATED_COUNT -gt 0 ]; then
+            git push origin "$BRANCH_NAME"
+            echo "pushed=true" >> $GITHUB_OUTPUT
+            echo "Successfully pushed nightly branch with $INTEGRATED_COUNT branches integrated ($FAILED_COUNT skipped)."
+          else
+            echo "pushed=false" >> $GITHUB_OUTPUT
+            echo "No branches were successfully integrated. Nightly branch not pushed."
+          fi
+
+      - name: Summarize Results
+        run: |
+          echo "### 🤖 Integration Robot Summary" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.nightly.outputs.pushed }}" = "true" ]; then
+            echo "✅ **Nightly branch created:** \`${{ steps.nightly.outputs.branch_name }}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **No nightly branch created.** (No branches passed validation or all had conflicts)" >> $GITHUB_STEP_SUMMARY
+          fi

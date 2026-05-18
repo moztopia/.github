@@ -1,0 +1,56 @@
+name: Develop Concierge
+
+on:
+  push:
+    branches:
+      - "develop/**"
+
+jobs:
+  check-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: check
+        uses: ./.github/actions/check-gate
+
+  concierge:
+    needs: check-gate
+    if: needs.check-gate.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    concurrency:
+      group: concierge-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          switch_branch: "false"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Code Validation
+        uses: ./.github/actions/code-validation
+
+      - name: Concierge PR
+        uses: ./.github/actions/create-pull-request
+        with:
+          title: "Develop Concierge: ${{ github.ref_name }}"
+          body: |
+            This PR was automatically created by the Develop Concierge after successful validation.
+            
+            **Branch:** `${{ github.ref_name }}`
+            **Status:** Tests Passed ✅
+            **Next Steps:** Codeowner review required (@mozrin).
+          reviewer: "@mozrin"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
