@@ -1,0 +1,14 @@
+{
+  "name": "github-moztopia",
+  "docs_path": "workflows",
+  "roadmap_path": "workflows/README.md",
+  "changelog_path": "CHANGELOG.md",
+  "projects": [
+    {
+      "name": "Scaffolding Engine",
+      "path": ".",
+      "type": "custom",
+      "test_command": "find actions/ -name '*.py' -exec python3 -m py_compile {} +"
+    }
+  ]
+}
