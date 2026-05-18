@@ -1,0 +1,11 @@
+---
+name: Build Bot Integration
+description: "Pulls remote build/* branches, speculatively merges them, runs validations, and pushes the successful result branch."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run Build Bot Script
+      shell: bash
+      run: |
+        python3 "${{ github.action_path }}/build_bot.py"

@@ -1,0 +1,34 @@
+---
+name: Build Bot Integration
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * *" # Run daily at 4:00 AM UTC
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-environment
+
+      - name: Speculative Integration & Validation
+        uses: ./.github/actions/build-bot
