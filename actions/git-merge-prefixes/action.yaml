@@ -25,67 +25,7 @@ runs:
       id: merge
       shell: bash
       run: |
-        CONFIG_FILE=".github/configuration.json"
-
-        # Load defaults from config if available
-        if [ -f "$CONFIG_FILE" ]; then
-          CONF_TARGET_PREFIX=$(jq -r '.integration.output_branch_prefix // "nightly"' "$CONFIG_FILE")
-          APPEND_DATE=$(jq -r '.integration.output_branch_append_date | if . == null then true else . end' "$CONFIG_FILE")
-        else
-          CONF_TARGET_PREFIX="nightly"
-          APPEND_DATE="true"
-        fi
-
-        DATE=$(date +'%Y%m%d')
-        PREFIX_LIST="${{ inputs.prefixes }}"
-        if [ -z "$PREFIX_LIST" ]; then
-          PREFIX_LIST="$PREFIXES"
-        fi
-
-        if [ -z "$PREFIX_LIST" ]; then
-          echo "Error: No prefixes provided and PREFIXES environment variable is empty."
-          exit 1
-        fi
-
-        TARGET_PREFIX="${{ inputs.target_branch_prefix }}"
-        if [ -z "$TARGET_PREFIX" ]; then
-          TARGET_PREFIX="$CONF_TARGET_PREFIX"
-        fi
-
-        # Build final branch name: append /DATE if configured
-        if [ "$APPEND_DATE" == "true" ]; then
-          FINAL_BRANCH="${TARGET_PREFIX}/${DATE}"
-        else
-          FINAL_BRANCH="${TARGET_PREFIX}"
-        fi
-
-        echo "Merging branches matching prefixes: $PREFIX_LIST"
-        echo "Target branch: $FINAL_BRANCH"
-
-        # Create a temporary working branch
-        git checkout -b merge-tmp
-
-        # Discover branches
-        branches=$(git branch -r | grep -E "origin/($PREFIX_LIST)" | sed 's|origin/||' || true)
-
-        if [ -z "$branches" ]; then
-          echo "No branches found matching prefixes."
-        else
-          for branch in $branches; do
-            echo "========================================"
-            echo "Merging $branch..."
-            echo "========================================"
-            git merge "origin/$branch" || { echo "Merge conflict on $branch"; exit 1; }
-          done
-        fi
-
-        # Rename to final target
-        git branch -M "$FINAL_BRANCH"
-
-        # Outputs for GitHub Actions
-        echo "date=$DATE" >> $GITHUB_OUTPUT
-        echo "branch_name=$FINAL_BRANCH" >> $GITHUB_OUTPUT
-
-        # Also set in environment for convenience in the same job
-        echo "DATE=$DATE" >> $GITHUB_ENV
-        echo "MERGED_BRANCH=$FINAL_BRANCH" >> $GITHUB_ENV
+        python3 "${{ github.action_path }}/git_merge_prefixes.py" \
+          --prefixes "${{ inputs.prefixes }}" \
+          --target-branch-prefix "${{ inputs.target_branch_prefix }}" \
+          --prefixes-env "$PREFIXES"

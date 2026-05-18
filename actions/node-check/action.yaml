@@ -7,24 +7,4 @@ runs:
     - name: Node check
       shell: bash
       run: |
-        for f in $(find . -name package.json -not -path "*/node_modules/*"); do
-          if [[ "$f" == *"hello-laravel/backend/package.json"* ]]; then
-            echo "Skipping Laravel backend npm build..."
-            continue
-          fi
-          echo "Node project detected at $f"
-          if jq -e '.scripts.build' "$f" >/dev/null; then
-            dir=$(dirname "$f")
-            (
-              cd "$dir"
-              if [ -f package-lock.json ]; then
-                npm ci
-              else
-                npm install
-              fi
-              npm run build
-            )
-          else
-            echo "No build script defined, skipping"
-          fi
-        done
+        python3 "${{ github.action_path }}/node_check.py"

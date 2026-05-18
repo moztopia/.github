@@ -1,41 +1,31 @@
-name: "Create Pull Request"
-description: "Creates a pull request if configured in configuration.json"
+inputs:
+  head:
+    description: "Branch containing changes (defaults to $MERGED_BRANCH)"
+    required: false
+  base:
+    description: "Branch to merge into (defaults to config or develop)"
+    required: false
+  title:
+    description: "PR title"
+    required: false
+  body:
+    description: "PR body"
+    required: false
+  reviewer:
+    description: "Reviewer to assign"
+    required: false
 
 runs:
   using: "composite"
   steps:
-    - name: Create PR
+    - name: Create or Update PR
       shell: bash
+      env:
+        GH_TOKEN: ${{ env.GH_TOKEN || secrets.GITHUB_TOKEN }}
       run: |
-        CONFIG_FILE=".github/configuration.json"
-        if [ -f "$CONFIG_FILE" ]; then
-          PR_ENABLED=$(jq -r '.integration.pull_request.enabled | if . == null then false else . end' "$CONFIG_FILE")
-          
-          if [ "$PR_ENABLED" == "true" ]; then
-            TO_BRANCH=$(jq -r '.integration.pull_request.to_branch // "develop"' "$CONFIG_FILE")
-            PR_TITLE=$(jq -r '.integration.pull_request.title // "Automated update"' "$CONFIG_FILE")
-            PR_BODY=$(jq -r '.integration.pull_request.body // "Automated PR"' "$CONFIG_FILE")
-            
-            if [ -z "$MERGED_BRANCH" ]; then
-              echo "::error::MERGED_BRANCH environment variable is not set."
-              exit 1
-            fi
-            
-            echo "Checking for existing PR from $MERGED_BRANCH to $TO_BRANCH"
-            
-            # Check if PR already exists
-            EXISTING_PR=$(gh pr list --base "$TO_BRANCH" --head "$MERGED_BRANCH" --state open --json number -q '.[0].number')
-            
-            if [ -n "$EXISTING_PR" ] && [ "$EXISTING_PR" != "null" ]; then
-              echo "PR already exists: #$EXISTING_PR. Updating it."
-              gh pr edit "$EXISTING_PR" --title "$PR_TITLE" --body "$PR_BODY"
-            else
-              echo "Creating new PR..."
-              gh pr create --base "$TO_BRANCH" --head "$MERGED_BRANCH" --title "$PR_TITLE" --body "$PR_BODY"
-            fi
-          else
-            echo "Pull request creation is disabled in $CONFIG_FILE."
-          fi
-        else
-          echo "$CONFIG_FILE not found, skipping PR creation."
-        fi
+        python3 "${{ github.action_path }}/create_pr.py" \
+          --head "${{ inputs.head }}" \
+          --base "${{ inputs.base }}" \
+          --title "${{ inputs.title }}" \
+          --body "${{ inputs.body }}" \
+          --reviewer "${{ inputs.reviewer }}"

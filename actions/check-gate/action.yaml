@@ -1,0 +1,17 @@
+---
+name: Check Gate
+description: "Checks if a workflow is enabled based on configuration files."
+
+outputs:
+  enabled:
+    description: "Whether the workflow is enabled ('true' or 'false')"
+    value: ${{ steps.gate.outputs.enabled }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Evaluate Gate
+      id: gate
+      shell: bash
+      run: |
+        python3 "${{ github.action_path }}/check_gate.py"

@@ -40,47 +40,47 @@ runs:
         node-version: 24
 
     - name: Node.js Validation
-      if: ${{ inputs.check_node == 'true' }}
+      if: ${{ inputs.check_node == 'true' || env.CHECK_NODE == 'true' }}
       uses: ./.github/actions/node-check
 
     - name: Python Validation
-      if: ${{ inputs.check_python == 'true' }}
+      if: ${{ inputs.check_python == 'true' || env.CHECK_PYTHON == 'true' }}
       uses: ./.github/actions/python-check
 
     - name: Setup PHP
-      if: ${{ inputs.check_laravel == 'true' }}
+      if: ${{ inputs.check_laravel == 'true' || env.CHECK_LARAVEL == 'true' }}
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.4'
 
     - name: Laravel/PHP Validation
-      if: ${{ inputs.check_laravel == 'true' }}
+      if: ${{ inputs.check_laravel == 'true' || env.CHECK_LARAVEL == 'true' }}
       uses: ./.github/actions/laravel-check
 
     - name: Rust Validation
-      if: ${{ inputs.check_rust == 'true' }}
+      if: ${{ inputs.check_rust == 'true' || env.CHECK_RUST == 'true' }}
       uses: ./.github/actions/rust-check
 
     - name: Setup Dart
-      if: ${{ inputs.check_dart == 'true' }}
+      if: ${{ inputs.check_dart == 'true' || env.CHECK_DART == 'true' }}
       uses: dart-lang/setup-dart@v1
 
     - name: Dart/Flutter Validation
-      if: ${{ inputs.check_dart == 'true' }}
+      if: ${{ inputs.check_dart == 'true' || env.CHECK_DART == 'true' }}
       uses: ./.github/actions/dart-check
 
     - name: Makefile Validation
-      if: ${{ inputs.check_makefile == 'true' }}
+      if: ${{ inputs.check_makefile == 'true' || env.CHECK_MAKEFILE == 'true' }}
       uses: ./.github/actions/makefile-check
 
     - name: Bash Validation
-      if: ${{ inputs.check_bash == 'true' }}
+      if: ${{ inputs.check_bash == 'true' || env.CHECK_BASH == 'true' }}
       uses: ./.github/actions/bash-check
 
     - name: Markdown Validation
-      if: ${{ inputs.check_markdown == 'true' }}
+      if: ${{ inputs.check_markdown == 'true' || env.CHECK_MARKDOWN == 'true' }}
       uses: ./.github/actions/markdown-check
 
     - name: Config Validation
-      if: ${{ inputs.check_config == 'true' }}
+      if: ${{ inputs.check_config == 'true' || env.CHECK_CONFIG == 'true' }}
       uses: ./.github/actions/config-check

@@ -7,7 +7,4 @@ runs:
     - name: Makefile check
       shell: bash
       run: |
-        for f in $(find . -name Makefile); do
-          echo "Makefile project detected at $f"
-          (cd $(dirname $f) && make test || make || true)
-        done
+        python3 "${{ github.action_path }}/makefile_check.py"

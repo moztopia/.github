@@ -7,16 +7,4 @@ runs:
     - name: Python check
       shell: bash
       run: |
-        for f in $(find . -name requirements.txt); do
-          echo "Python project detected at $f"
-          dir=$(dirname "$f")
-          (
-            cd "$dir" \
-            && rm -rf .venv \
-            && python3 -m venv .venv \
-            && source .venv/bin/activate \
-            && pip install --upgrade pip \
-            && pip install -r requirements.txt \
-            && pytest || true
-          )
-        done
+        python3 "${{ github.action_path }}/python_check.py"

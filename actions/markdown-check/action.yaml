@@ -7,7 +7,4 @@ runs:
     - name: Markdown check
       shell: bash
       run: |
-        for f in $(find . -name "*.md" -not -path "*/node_modules/*" -not -path "*/.venv/*" -not -path "*/.pytest_cache/*" -not -path "*/vendor/*"); do
-          echo "Checking markdown file $f"
-          grep -q . "$f" || exit 1
-        done
+        python3 "${{ github.action_path }}/markdown_check.py"

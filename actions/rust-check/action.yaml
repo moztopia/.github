@@ -7,7 +7,4 @@ runs:
     - name: Rust check
       shell: bash
       run: |
-        for f in $(find . -name Cargo.toml); do
-          echo "Rust project detected at $f"
-          (cd $(dirname $f) && cargo test || true)
-        done
+        python3 "${{ github.action_path }}/rust_check.py"

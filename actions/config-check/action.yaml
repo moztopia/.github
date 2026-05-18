@@ -7,5 +7,4 @@ runs:
     - name: Config check
       shell: bash
       run: |
-        yamllint -d "{extends: default, rules: {line-length: disable, truthy: disable}}" .github/workflows || exit 1
-        jq empty .github/configuration.json || exit 1
+        python3 "${{ github.action_path }}/config_check.py"
